@@ -13,7 +13,7 @@ Another abstract base class, "Entity" deals with the physical models, or the int
 
 "Vector"(not the C++ "vector") class is defined in "Basic.h", containing several 3-d vector operations which I consider useful. I did overload some of its operators, and I hope this effort will be helpful for further debugging.
 
-Lastly, "CollisionSystemTest.cpp" here contains the main function, and controls OpenGL. The name is weird -_-. It would be changed soon.
+Lastly, "main.cpp" here contains the main function, and controls OpenGL.
 
 Dec. 20th
 Yiqun Liu
