@@ -1,4 +1,4 @@
-#include "Game.h"
+include "Game.h"
 Game::Game()
 	:tank(Point(-40, 0, 0))
 {
@@ -10,7 +10,7 @@ void Game::keyboard(unsigned char key, int x, int y)
 	{
 	case 27: {exit(0); break; }	// ESC
 	case ' ': {ball.setVelocity(Vector(0.1, 0, 0)); break; }
-	case 'w': {tank.setSpeed(0.01); break; }
+	case 'w': {tank.setSpeed(0.02); break; }
 	case 's': {tank.setSpeed(-0.01); break; }
 	case 'a': {tank.turn(2.5); break; }
 	case 'd': {tank.turn(-2.5); break; }
@@ -55,22 +55,29 @@ void Game::orthoCollide()
 		// Assume the speed of tank will not be changed after a collision
 		// v_n_ball' = 2 * v_n_tank - v_n_ball
 		
+		// Resolve return value
+		GLfloat depth = force_ball_to_tank.z;
+		force_ball_to_tank.z = 0;
+		
 		// f_*_i: direction vector accepted by *
 		Vector f_tank_i = force_ball_to_tank.getIdentityVector();
 		Vector f_ball_i = -f_tank_i;
+		
 		Vector v_ball = ball.getVelocity();
 		Vector v_n_ball = (v_ball * f_tank_i) * f_tank_i;	// First do dotted product
 		Vector v_t_ball = v_ball - v_n_ball;				// Then do scalar product
 		
 		Vector v_tank = tank.getVelocity();
 		Vector v_n_tank = (v_tank * f_ball_i) * f_ball_i;	// First do dotted product
+		
+		// First: keep objects separated
+		// TODO: if ball will not go outside; else tank roll back
+		ball.setCenter(ball.getCenter() + depth * f_ball_i + 
+			v_n_tank - v_n_ball);	// add relative speed
 
 		v_n_ball = 2 * v_n_tank - v_n_ball;
 		v_ball = v_n_ball + v_t_ball;
 		ball.setVelocity(v_ball);
-		// not a good practice
-		if (v_ball.getLength() > Entity::highestSpeed)
-			ball.setSpeed(Entity::highestSpeed);
 	}
 }
 /** Family of collision detection functions. For simplicity here we use a
@@ -120,6 +127,9 @@ Vector Game::collision2D(
 /**	Rectangle vs. Circle
 *	Parameters: centers of geometries and their scale parameters.
 *	Principle from: Arvo, "A Simple Method for Box-Sphere Intersection Testing"
+*
+*	Potential bug: corner detection miss. caused by miscalculation of "y2".
+*	The precise cause is still unknown.
 */
 Vector Game::collision2D(GLfloat x1, GLfloat y1, GLfloat length, GLfloat width,
 	GLfloat angle, GLfloat x2, GLfloat y2, GLfloat radius)
@@ -141,30 +151,67 @@ Vector Game::collision2D(GLfloat x1, GLfloat y1, GLfloat length, GLfloat width,
 	x2 = tempX;
 	y2 = tempY;
 
-	bool negX = x2 > x1;
-	bool negY = y2 > y1;
+	bool negX = x2 >= 0;
+	bool negY = y2 >= 0;
 	Vector p = Vector(x2, y2, 0).abs();
-	Vector h = Vector(0.5 * length, 0.5 * width, 0);
+	
+	const Vector h(0.5 * length, 0.5 * width, 0);
 	Vector u = p - h;
+	
 	u.x = u.x > 0 ? u.x : 0;
 	u.y = u.y > 0 ? u.y : 0;
-	/*debug
-	{
-		static Vector u0(0, 0, 0);
-		if (u != u0)
-		{
-			u0 = u;
-			cout << angle / 3.1415926 * 180 << "\t:" << x2 << "," << y2 << p << u << endl;
-		}
-	}*/
 	
-	if (u.getLength() > radius)	// no collision
+	GLfloat depth = radius - u.getLength();
+	if (depth <= 0)	// no collision
 		return Vector(0, 0, 0);
-	Vector ret(1, 1, 0);
-	if (u.x == 0)
-		ret.x = 0;
-	if (u.y == 0)
-		ret.y = 0;
+	
+	/** As the "z" field of a vector will never be used, we use it to hold the 
+	*	"intersection depth". This value is used to ensure that no part of an object
+	*	will stay in another object. (Doesn't work when multiple obejcts crashes)
+	*/
+
+	/** If x and y here are positive, this simply means that there're force on 
+	*	this direction. It is not the final direction.
+	*/
+	Vector ret(1, 1, depth);
+	
+	/** totally inside, we should figure out from which edge the ball crashes
+	*	using history information. It's a really rare case.
+	*/
+	static Vector last_u(1, 1, 0);
+	if (u.x == 0 && u.y == 0)
+	{
+		cout << "Insider called.\n";
+		//cout << x2 << "\t" <<  y2 << "\t" << last_u << endl;
+		if (last_u.x != 0 && last_u.y != 0)
+		{
+			// push to the corner
+			ret = h - p;
+			ret.z = radius + ret.getLength();
+		}
+		else if (last_u.x != 0)
+		{
+			// push to the right border
+			ret.y = 0;
+			ret.z = radius + 0.5 * length - x2;
+		}
+		else
+		{
+			// push to the top border
+			ret.y = 0;
+			ret.z = radius + 0.5 * width - y2;
+		}
+	}
+	else
+	{
+		last_u = u;
+		if (u.x == 0)
+			ret.x = 0;
+		if (u.y == 0)
+			ret.y = 0;
+	}
+
+	// Decide direction
 	if (negX) ret.x = -ret.x;
 	if (negY) ret.y = -ret.y;
 
