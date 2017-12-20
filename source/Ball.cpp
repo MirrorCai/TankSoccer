@@ -1,7 +1,7 @@
 #include "Ball.h"
 
 const unsigned int Ball::BALL_MASS = 5;
-const GLfloat Ball::BALL_DEFAULT_FACTOR = 0.0001f;
+const GLfloat Ball::BALL_DEFAULT_FACTOR = 0.00002f;
 
 Ball::Ball()
 	:Entity(BALL_MASS)
