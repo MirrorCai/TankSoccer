@@ -59,13 +59,15 @@ void idle()
 }
 void redraw()
 {
-	static Vector center(0, 0, 0), eye(0, -GLfloat(Pitch::WIDTH) / 2 - 10, 40);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();									// Reset The Current Modelview Matrix
 
-	game.setCamera(eye, center);
+	game.updateCamera();
+	Point eye = game.camera.getEye();
+	Point focus = game.camera.getFocus();
+	
 	gluLookAt(eye.x, eye.y, eye.z,
-		center.x, center.y, center.z,
+		focus.x, focus.y, focus.z,
 		0, 0, 1);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

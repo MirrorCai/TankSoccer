@@ -5,6 +5,9 @@
 #include "Ball.h"
 #include "Tank.h"
 #include "Pitch.h"
+#include "Camera.h"
+
+enum FollowItem {BALL, TANK};
 
 class Game
 {
@@ -13,7 +16,8 @@ public:
 	void keyboard(unsigned char key, int x, int y);
 	void display();
 	void gotoNextFrame();
-	void setCamera(Vector &eye, Vector &center);
+	void updateCamera();
+	Camera camera;
 
 private:
 	void orthoCollide();
@@ -21,7 +25,8 @@ private:
 	Ball ball;
 	Tank tank;
 
-//private:
+	FollowItem followItem;
+
 	const GLfloat safeMargin = 15;
 	
 	// All parameters are their value in world coordinates.

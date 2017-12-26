@@ -1,35 +1,41 @@
-include "Game.h"
+#include "Game.h"
 Game::Game()
 	:tank(Point(-40, 0, 0))
 {
-	;
+	followItem = BALL;
 }
 void Game::keyboard(unsigned char key, int x, int y)
 {
 	switch (key)
 	{
 	case 27: {exit(0); break; }	// ESC
-	case ' ': {ball.setVelocity(Vector(0.1, 0, 0)); break; }
+	//case ' ': {ball.setVelocity(Vector(0.1, 0, 0)); break; }
 	case 'w': {tank.setSpeed(0.02); break; }
 	case 's': {tank.setSpeed(-0.01); break; }
 	case 'a': {tank.turn(2.5); break; }
 	case 'd': {tank.turn(-2.5); break; }
 	case 'q': {tank.turnTurret(2.5); break; }
 	case 'e': {tank.turnTurret(-2.5); break; }
+
+	case 'i': {camera.zoom(1.0); break; }
+	case 'k': {camera.zoom(-1.0); break; }
+	case 'j': {if (followItem == BALL) camera.rotateFreeEye(2.5); break; }
+	case 'l': {if (followItem == BALL) camera.rotateFreeEye(-2.5); break; }
+	case ' ': 
+		camera.changeMode();
+		if (camera.getMode() == PLAYER)
+			followItem = TANK;
+		else
+			followItem = BALL;
+		break;
 	}
 }
-void Game::setCamera(Vector &eye, Vector &center)
+void Game::updateCamera()
 {
-	static const Vector eyeDistance(0, -GLfloat(Pitch::WIDTH) / 2 - 20, 40);
-	static const GLfloat
-		bound_x = 0.45 * Pitch::LENGTH, bound_y = 0.25 * Pitch::WIDTH;
-	center = ball.getCenter();
-	if (center.x > bound_x) center.x = bound_x;
-	if (center.x < -bound_x) center.x = -bound_x;
-	if (center.y > bound_y) center.y = bound_y;
-	if (center.y < -bound_y) center.y = -bound_y;
-
-	eye = eyeDistance + center;
+	if (followItem == BALL)
+		camera.follow(ball.getCenter());
+	else
+		camera.follow(tank.getCenter(), tank.getAngle());
 }
 void Game::display()
 {
@@ -53,23 +59,23 @@ void Game::orthoCollide()
 	if (force_ball_to_tank != Vector(0, 0, 0))	// Collided
 	{
 		// Assume the speed of tank will not be changed after a collision
-		// v_n_ball' = 2 * v_n_tank - v_n_ball
+		// formula: v_n_ball' = 2 * v_n_tank - v_n_ball
 		
 		// Resolve return value
 		GLfloat depth = force_ball_to_tank.z;
 		force_ball_to_tank.z = 0;
-		
+
 		// f_*_i: direction vector accepted by *
 		Vector f_tank_i = force_ball_to_tank.getIdentityVector();
 		Vector f_ball_i = -f_tank_i;
-		
+
 		Vector v_ball = ball.getVelocity();
-		Vector v_n_ball = (v_ball * f_tank_i) * f_tank_i;	// First do dotted product
-		Vector v_t_ball = v_ball - v_n_ball;				// Then do scalar product
+		Vector v_n_ball = (v_ball * f_tank_i) * f_tank_i;	// dotted product first and
+		Vector v_t_ball = v_ball - v_n_ball;				// scalar product second
 		
 		Vector v_tank = tank.getVelocity();
-		Vector v_n_tank = (v_tank * f_ball_i) * f_ball_i;	// First do dotted product
-		
+		Vector v_n_tank = (v_tank * f_ball_i) * f_ball_i;
+
 		// First: keep objects separated
 		// TODO: if ball will not go outside; else tank roll back
 		ball.setCenter(ball.getCenter() + depth * f_ball_i + 
@@ -126,6 +132,7 @@ Vector Game::collision2D(
 
 /**	Rectangle vs. Circle
 *	Parameters: centers of geometries and their scale parameters.
+*	Return a 3-D vector, the third field holds intersection depth.
 *	Principle from: Arvo, "A Simple Method for Box-Sphere Intersection Testing"
 *
 *	Potential bug: corner detection miss. caused by miscalculation of "y2".
@@ -134,7 +141,6 @@ Vector Game::collision2D(
 Vector Game::collision2D(GLfloat x1, GLfloat y1, GLfloat length, GLfloat width,
 	GLfloat angle, GLfloat x2, GLfloat y2, GLfloat radius)
 {
-
 	// quick-test first
 	GLfloat d = length / 2 + radius;
 	if (x2 - x1 > d || x1 - x2 > d || y2 - y1 > d || y1 - y2 > d)
@@ -155,12 +161,13 @@ Vector Game::collision2D(GLfloat x1, GLfloat y1, GLfloat length, GLfloat width,
 	bool negY = y2 >= 0;
 	Vector p = Vector(x2, y2, 0).abs();
 	
-	const Vector h(0.5 * length, 0.5 * width, 0);
+	// set a safe margin: avoid problem caused by precisions
+	const Vector h = Vector(0.5 * length, 0.5 * width, 0);
 	Vector u = p - h;
-	
+
 	u.x = u.x > 0 ? u.x : 0;
 	u.y = u.y > 0 ? u.y : 0;
-	
+
 	GLfloat depth = radius - u.getLength();
 	if (depth <= 0)	// no collision
 		return Vector(0, 0, 0);
@@ -220,7 +227,6 @@ Vector Game::collision2D(GLfloat x1, GLfloat y1, GLfloat length, GLfloat width,
 	tempY = sin_angle * ret.x + cos_angle * ret.y;
 	ret.x = tempX;
 	ret.y = tempY;
-
 	return ret;
 }
 

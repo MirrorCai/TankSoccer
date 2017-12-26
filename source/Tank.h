@@ -9,7 +9,6 @@ class Tank: public Entity
 {
 public:
 	Tank(Point center);
-	// TODO: turn the tank
 	void turnTurret(GLfloat angle);
 	Size getBlockSize();
 
