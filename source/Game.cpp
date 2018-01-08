@@ -1,8 +1,16 @@
 #include "Game.h"
+#include <time.h>
 Game::Game()
-	:tank(Point(-40, 0, 0))
+	:tank(Point(-40, 0, 0)),tank2(Point(40, 0, 0))
 {
+	tFlag = 1;
+	tCount = 0;
+	bEnvir = true;
+	bSpot = false;
+	bChange = false;
 	followItem = BALL;
+	tank.turn(0);
+	tank2.turn(180);
 }
 void Game::keyboard(unsigned char key, int x, int y)
 {
@@ -16,6 +24,17 @@ void Game::keyboard(unsigned char key, int x, int y)
 	case 'd': {tank.turn(-2.5); break; }
 	case 'q': {tank.turnTurret(2.5); break; }
 	case 'e': {tank.turnTurret(-2.5); break; }
+
+	case '0': {bEnvir = !bEnvir; break; }
+	case 'b': {capture(); break; }
+	case '9': {bChange = !bChange; break; }
+
+	case 't': {tank2.setSpeed(0.02); break; }
+	case 'g': {tank2.setSpeed(-0.01); break; }
+	case 'f': {tank2.turn(2.5); break; }
+	case 'h': {tank2.turn(-2.5); break; }
+	case 'r': {tank2.turnTurret(2.5); break; }
+	case 'y': {tank2.turnTurret(-2.5); break; }
 
 	case 'i': {camera.zoom(1.0); break; }
 	case 'k': {camera.zoom(-1.0); break; }
@@ -42,20 +61,39 @@ void Game::display()
 	pitch.draw();
 	ball.render();
 	tank.render();
+	tank2.render();
 }
 void Game::gotoNextFrame()
 {
-	orthoCollide();
+	orthoCollide(tank.getCenter(),ball.getCenter(),1);
+	orthoCollide(tank2.getCenter(), ball.getCenter(),2);
 	ball.update();
 	tank.update();
+	tank2.update();
 }
-void Game::orthoCollide()
-{
-	// Now only consider one tank and one ball
-	Point c1 = tank.getCenter(), c2 = ball.getCenter();
+//unfinished: tank vs tank 
+void Game::TankCollision(Point c1, Point c2) {
 	Size blockSize = tank.getBlockSize();
 	Vector force_ball_to_tank = collision2D(c1.x, c1.y, blockSize.x, blockSize.y,
-		tank.getAngle(), c2.x, c2.y, ball.getRadius());
+		tank.getAngle(), c2.x, c2.y, blockSize.x, blockSize.y,
+		tank2.getAngle());
+	if (force_ball_to_tank != Vector(0, 0, 0))	// Collided
+	{
+
+	}
+}
+void Game::orthoCollide(Point c1, Point c2, int TankNum)
+{
+	// Now only consider one tank and one ball
+	//Point c1 = tank.getCenter(), c2 = ball.getCenter();
+	Tank* tanker;
+	if (TankNum == 1)
+		tanker = &tank;
+	else
+		tanker = &tank2;
+	Size blockSize = tanker->getBlockSize();
+	Vector force_ball_to_tank = collision2D(c1.x, c1.y, blockSize.x, blockSize.y,
+		tanker->getAngle(), c2.x, c2.y, ball.getRadius());
 	if (force_ball_to_tank != Vector(0, 0, 0))	// Collided
 	{
 		// Assume the speed of tank will not be changed after a collision
@@ -73,7 +111,7 @@ void Game::orthoCollide()
 		Vector v_n_ball = (v_ball * f_tank_i) * f_tank_i;	// dotted product first and
 		Vector v_t_ball = v_ball - v_n_ball;				// scalar product second
 		
-		Vector v_tank = tank.getVelocity();
+		Vector v_tank = tanker->getVelocity();
 		Vector v_n_tank = (v_tank * f_ball_i) * f_ball_i;
 
 		// First: keep objects separated
@@ -282,4 +320,76 @@ void Game::releaseVertices(GLfloat** vertices)
 	for (int i = 0; i < 4; i++)
 		delete[]vertices[i];
 	delete[]vertices;
+}
+
+void Game::capture()
+{
+	FILE*    pDummyFile;  //指向另一bmp文件，用于复制它的文件头和信息头数据  
+	FILE*    pWritingFile;  //指向要保存截图的bmp文件  
+	GLubyte* pPixelData;    //指向新的空的内存，用于保存截图bmp文件数据  
+	GLubyte  BMP_Header[BMP_Length];
+	GLint    i, j;
+	GLint    PixelDataLength;   //BMP文件数据总长度  
+
+								// 计算像素数据的实际长度  
+	i = WinWidth * 3;			// 得到每一行的像素数据长度  
+	while (i % 4 != 0)			// 补充数据，直到i是的倍数  
+		++i;
+	PixelDataLength = i * WinHeight;  //补齐后的总位数  
+
+									  // 分配内存和打开文件  
+	pPixelData = (GLubyte*)malloc(PixelDataLength);
+	if (pPixelData == 0)
+		exit(0);
+
+	pDummyFile = fopen("demo.bmp", "rb");//只读形式打开  
+	if (pDummyFile == 0)
+		exit(0);
+
+	pWritingFile = fopen("capture.bmp", "wb"); //只写形式打开  
+	if (pWritingFile == 0)
+		exit(0);
+
+	//把读入的bmp文件的文件头和信息头数据复制，并修改宽高数据  
+	fread(BMP_Header, sizeof(BMP_Header), 1, pDummyFile);  //读取文件头和信息头，占据54字节  
+	fwrite(BMP_Header, sizeof(BMP_Header), 1, pWritingFile);
+	fseek(pWritingFile, 0x0012, SEEK_SET); //移动到0X0012处，指向图像宽度所在内存  
+	i = WinWidth;
+	j = WinHeight;
+	fwrite(&i, sizeof(i), 1, pWritingFile);
+	fwrite(&j, sizeof(j), 1, pWritingFile);
+
+	// 读取当前画板上图像的像素数据  
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);  //设置4位对齐方式  
+	glReadPixels(0, 0, WinWidth, WinHeight,
+		GL_BGR_EXT, GL_UNSIGNED_BYTE, pPixelData);
+
+	// 写入像素数据  
+	fseek(pWritingFile, 0, SEEK_END);
+	//把完整的BMP文件数据写入pWritingFile  
+	fwrite(pPixelData, PixelDataLength, 1, pWritingFile);
+
+	// 释放内存和关闭文件  
+	fclose(pDummyFile);
+	fclose(pWritingFile);
+	free(pPixelData);
+	//free(timeInfo);
+}
+
+void Game::changeScene() {
+
+	if (posLight[2] == 20.0f)
+		tFlag = -1;
+	if (posLight[2] == -5.0f)
+		tFlag = 1;
+
+	tCount++;
+	if (tCount == 1000) {
+		tCount = 0;
+		posLight[2] += tFlag;
+		posLight[1] += 1.0f;
+		if (posLight[1] == 25)
+			posLight[1] = -20;
+		printf("%lf,%lf\n", posLight[1], posLight[2]);
+	}
 }

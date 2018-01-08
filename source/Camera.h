@@ -11,6 +11,8 @@ class Camera
 public:
 	friend class Game;
 	Camera();
+	void addEye(int xyz);
+	void subEye(int xyz);
 	Point getEye();
 	Point getFocus();
 	CameraMode getMode();

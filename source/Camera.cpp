@@ -7,7 +7,44 @@ Camera::Camera()
 {
 	mode = FIXED;
 }
-
+void Camera::addEye(int xyz) {
+	switch (xyz)
+	{
+	case 0: 
+		freeEye.x += 0.1f;
+		focus.x += 0.1f;
+		break;
+	case 1:
+		freeEye.y += 0.1f;
+		focus.y += 0.1f;
+		break;
+	case 2:
+		freeEye.z += 0.1f;
+		focus.z += 0.1f;
+		break;
+	default:
+		break;
+	}
+}
+void Camera::subEye(int xyz) {
+	switch (xyz)
+	{
+	case 0:
+		freeEye.x -= 0.1f;
+		focus.x -= 0.1f;
+		break;
+	case 1:
+		freeEye.y -= 0.1f;
+		focus.y -= 0.1f;
+		break;
+	case 2:
+		freeEye.z -= 0.1f;
+		focus.z -= 0.1f;
+		break;
+	default:
+		break;
+	}
+}
 Point Camera::getEye()
 {
 	switch (mode)
