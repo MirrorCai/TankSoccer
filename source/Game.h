@@ -7,6 +7,10 @@
 #include "Pitch.h"
 #include "Camera.h"
 
+#define BMP_Length 54
+#define WinWidth  600  
+#define WinHeight 350  
+
 enum FollowItem {BALL, TANK};
 
 class Game
@@ -18,14 +22,23 @@ public:
 	void gotoNextFrame();
 	void updateCamera();
 	Camera camera;
+	GLfloat posLight[4] = { 5.0f,-14.0f,.0f,0.0f };	//环境光位置
+	bool bEnvir;
+	bool bSpot;
+	bool bChange;
+	void capture();
+	void changeScene();
 
 private:
-	void orthoCollide();
+	void orthoCollide(Point c1, Point c2,int TankNum);
+	void TankCollision(Point c1, Point c2);
 	Pitch pitch;
 	Ball ball;
 	Tank tank;
-
+	Tank tank2;
 	FollowItem followItem;
+	int tCount;
+	int tFlag;
 
 	const GLfloat safeMargin = 15;
 	

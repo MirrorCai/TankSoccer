@@ -1,8 +1,7 @@
 ﻿  Game.cpp
-  Camera.cpp
-  Generating Code...
-  Compiling...
-  main.cpp
-  Generating Code...
-  TankSoccer.vcxproj -> C:\Users\Liu\Documents\GitHub\TankSoccer\source\Debug\TankSoccer.exe
-  TankSoccer.vcxproj -> C:\Users\Liu\Documents\GitHub\TankSoccer\source\Debug\TankSoccer.pdb (Full PDB)
+d:\code\project\tank\tanksoccer\source\game.cpp(345): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.15063.0\ucrt\stdio.h(207): note: 参见“fopen”的声明
+d:\code\project\tank\tanksoccer\source\game.cpp(349): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.15063.0\ucrt\stdio.h(207): note: 参见“fopen”的声明
+  TankSoccer.vcxproj -> D:\code\project\Tank\TankSoccer\source\Debug\TankSoccer.exe
+  TankSoccer.vcxproj -> D:\code\project\Tank\TankSoccer\source\Debug\TankSoccer.pdb (Partial PDB)

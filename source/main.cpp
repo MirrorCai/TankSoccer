@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
-	glutInitWindowSize(600, 350);
+	glutInitWindowSize(WinWidth, WinHeight);
 	glutCreateWindow("Tank Soccer");
 
 	glutDisplayFunc(redraw);
@@ -74,7 +74,22 @@ void redraw()
 	glEnable(GL_DEPTH_TEST);
 
 	// TODO: light
+	glEnable(GL_LIGHTING);			//开启光源效果
+	GLfloat Va[] = { 0.4,0.4,0.4,1 };           //光源环境光强度数组  
+	GLfloat Vd[] = { 0.6,0.6,0.6,1 };           //光源散射光强度数组  
+	GLfloat Vs[] = { 0.6,0.6,0.6,1 };           //光源镜面反射光强度数组  
+	GLfloat white[] = { 1.0, 1.0, 1.0, 0.0 };
 
+	glLightfv(GL_LIGHT0, GL_POSITION, game.posLight);	// 指定0号光源的位置
+	glLightfv(GL_LIGHT0, GL_AMBIENT, white);		// 添加0号光源的环境光属性
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, white);		// 设置0号光源的散射光属性  
+	glLightfv(GL_LIGHT0, GL_SPECULAR, white);		// 设置0号光源的镜面反射光属性  
+	if (game.bEnvir)
+		glEnable(GL_LIGHT0);
+	else
+		glDisable(GL_LIGHT0);
+	if(game.bChange)
+		game.changeScene();
 	// draw game scene
 	game.display();
 	game.gotoNextFrame();

@@ -26,7 +26,10 @@ void Cylinder::setHeight(GLfloat radius)
 void Cylinder::draw()
 {
 	glPushMatrix();
-	glColor3f(1.0, 0, 0);
+	//glColor3f(1.0, 0, 0);
+	GLfloat refCylinder[3] = { 1.0f,0.0f,1.0f };			//桌腿4反射参数
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, refCylinder);//设置桌面漫反射
+	glMaterialfv(GL_FRONT, GL_SPECULAR, refCylinder);//设置桌面镜面反射
 	/** LIU: gluCylinder is different from glSolid* functions. It keeps the origin
 	*	as the center of its bottom circle, rather than the center of the shape.
 	*	Thus, its transformation matrices are slightly different from those for 
