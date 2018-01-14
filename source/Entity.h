@@ -25,6 +25,7 @@ public:
 	void setCenter(Point center);
 	void setMass(unsigned int mass);
 	void setDecelerationFactor(GLfloat decelerationFactor);
+	void setTextureID(GLuint textureID);
 
 	bool isMoving();
 
@@ -50,6 +51,10 @@ protected:
 
 	vector<Geometry *> objects;
 	vector<Vector> displacements;
+private:
+	GLuint textureID;
+	const GLfloat HIGHEST_VELOCITY = 0.1;
+	const GLuint UNDEFINED_TEXTURE = 99999;
 };
 
 #endif

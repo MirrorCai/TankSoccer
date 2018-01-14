@@ -1,16 +1,18 @@
 #include "Cylinder.h"
 
-Cylinder::Cylinder(GLfloat radius, GLfloat height, bool axis_direction)
+Cylinder::Cylinder(GLfloat radius, GLfloat height, GLfloat angle, bool isVertical)
 {
-	this->axis_direction;
+	this->angle = angle;
+	this->isVertical = isVertical;
 	this->radius = radius;
 	this->height = height;
 }
-Cylinder::Cylinder(Vector bottomCenter, GLfloat radius, GLfloat height,
-	bool axis_direction)
+Cylinder::Cylinder(Point bottomCenter, GLfloat radius, GLfloat angle, GLfloat height,
+	bool isVertical)
 	:Geometry(bottomCenter)
 {
-	this->axis_direction;
+	this->angle = angle;
+	this->isVertical = isVertical;
 	this->radius = radius;
 	this->height = height;
 }
@@ -27,9 +29,10 @@ void Cylinder::draw()
 {
 	glPushMatrix();
 	//glColor3f(1.0, 0, 0);
-	GLfloat refCylinder[3] = { 1.0f,0.0f,1.0f };			//桌腿4反射参数
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, refCylinder);//设置桌面漫反射
-	glMaterialfv(GL_FRONT, GL_SPECULAR, refCylinder);//设置桌面镜面反射
+	GLfloat cycinderDiffuse[3] = { 0.5f, 0.0f, 0.5f };
+	GLfloat cylinderSpecular[3] = { 1.0f, 1.0f, 1.0f };	// Make it metal-like
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, cycinderDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, cylinderSpecular);
 	/** LIU: gluCylinder is different from glSolid* functions. It keeps the origin
 	*	as the center of its bottom circle, rather than the center of the shape.
 	*	Thus, its transformation matrices are slightly different from those for 
@@ -37,7 +40,7 @@ void Cylinder::draw()
 	*/
 	glTranslatef(bottomCenter.x, bottomCenter.y, bottomCenter.z);
 	glRotatef(angle, 0, 0, 1);
-	if (axis_direction == VERTICAL)
+	if (isVertical == true)
 	{
 		gluCylinder(gluNewQuadric(), radius, radius, height, 10, 10);
 	}

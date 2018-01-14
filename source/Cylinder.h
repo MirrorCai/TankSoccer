@@ -6,18 +6,15 @@
 class Cylinder: public Geometry
 {
 public:
-	Cylinder(GLfloat radius, GLfloat height, bool axis_direction);
-	Cylinder(Vector bottomCenter, GLfloat radius, GLfloat height, 
+	Cylinder(GLfloat radius, GLfloat height, GLfloat angle, bool isVertical);
+	Cylinder(Point bottomCenter, GLfloat radius, GLfloat height, GLfloat angle,
 		bool axis_direction);
 	void setRadius(GLfloat radius);
 	void setHeight(GLfloat radius);
 	virtual void draw();
 
-	static const bool VERTICAL = true;
-	static const bool HORIZONTAL = false;
-
 private:
-	bool axis_direction;
+	bool isVertical;
 	GLfloat radius;
 	GLfloat height;
 };
