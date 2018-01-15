@@ -3,7 +3,7 @@
 
 const Vector Entity::MOTIONLESS(0, 0, 0);
 const Point Entity::CENTER(0, 0, 0);
-const GLfloat Entity::highestSpeed = 0.04;
+const GLfloat Entity::highestSpeed = 1.0f;
 
 Entity::Entity(unsigned int mass, Point center)
 	:center(center), velocity(MOTIONLESS), acceleration(MOTIONLESS), 

@@ -31,6 +31,7 @@ Size Cuboid::getSize()
 void Cuboid::draw()
 {
 	glPushMatrix();
+
 	GLfloat refCuboid[3] = { 0.4f,0.2f ,0.1f };			// brown
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, refCuboid);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, refCuboid);

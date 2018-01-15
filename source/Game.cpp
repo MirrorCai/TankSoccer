@@ -27,8 +27,8 @@ void Game::keyboard(unsigned char key, int x, int y)
 	{
 	case 27: {exit(0); break; }	// ESC
 	//case ' ': {ball.setVelocity(Vector(0.1, 0, 0)); break; }
-	case 'w': {tank1.setSpeed(0.02); break; }
-	case 's': {tank1.setSpeed(-0.01); break; }
+	case 'w': {tank1.setSpeed(0.08); break; }
+	case 's': {tank1.setSpeed(-0.03); break; }
 	case 'a': {tank1.turn(2.5); break; }
 	case 'd': {tank1.turn(-2.5); break; }
 	case 'q': {tank1.turnTurret(2.5); break; }
@@ -85,8 +85,8 @@ void Game::gotoNextFrame()
 	checkBounds(ball);
 	checkBounds(tank1);
 	checkBounds(tank2);
-	if (ball.getVelocity().getSquareLength() > 0.0004)
-		ball.setSpeed(0.02);
+	if (ball.getVelocity().getSquareLength() > 0.04)
+		ball.setSpeed(0.2);
 	ball.update();
 	tank1.update();
 	tank2.update();

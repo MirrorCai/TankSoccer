@@ -39,7 +39,6 @@ public:
 protected:
 	void updateAcceleration();
 	bool move();	// return false if the object stayed still
-	// TODO: add overload for different type of movement
 	void followCenter();
 
 	unsigned int mass;
@@ -53,7 +52,7 @@ protected:
 	vector<Vector> displacements;
 private:
 	GLuint textureID;
-	const GLfloat HIGHEST_VELOCITY = 0.1;
+	const GLfloat HIGHEST_VELOCITY = 1.0f;
 	const GLuint UNDEFINED_TEXTURE = 99999;
 };
 

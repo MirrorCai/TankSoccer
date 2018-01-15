@@ -6,6 +6,10 @@ Sphere::Sphere()
 {
 	radius = DEFAULT_RADIUS;
 }
+Sphere::Sphere(GLfloat radius)
+{
+	this->radius = radius;
+}
 void Sphere::setRadius(GLfloat radius)
 {
 	this->radius = radius;
