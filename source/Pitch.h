@@ -1,27 +1,28 @@
 #ifndef PITCH_H
 #define PITCH_H
 
+#include "TextureManager.h"
+#include "Goal.h"
+
 class Pitch
 {
 public:
-	static const unsigned int LENGTH = 100;
-	static const unsigned int WIDTH = 50;
-	GLfloat refPitch[3] = { 0.0f,1.0f,0.0f };			//桌腿3反射参数
-	void draw()
-	{
-		const int height = 2;
-		glPushMatrix();
+	static const unsigned int LENGTH = 150;
+	static const unsigned int WIDTH = 75;
+//	GLfloat refPitch[3] = { 0.0f,1.0f,0.0f };
 
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, refPitch);//设置桌面漫反射
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, refPitch);//设置桌面镜面反射
-		glTranslatef(0, 0, -height / 2);	// Keep the board underground
-		glScalef(LENGTH, WIDTH, height);
-		//glColor3f(0, 0.6, 0);	// Green
-		glutSolidCube(1);
+	Pitch();
 
-		glPopMatrix();
-	}
+	void changeTexture();
+	
+	void draw();
 
+private:
+	int texture;
+	Goal leftGoal;
+	Goal rightGoal;
+	void drawPitch();
+	void drawBoard();
 };
 #endif // !PITCH_H
 

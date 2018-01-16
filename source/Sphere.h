@@ -7,6 +7,7 @@ class Sphere : public Geometry
 {
 public:
 	Sphere();
+	Sphere(GLfloat radius);
 	void setRadius(GLfloat radius);
 	GLfloat getRadius();
 	virtual void draw();

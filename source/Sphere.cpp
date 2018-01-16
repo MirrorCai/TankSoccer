@@ -6,6 +6,10 @@ Sphere::Sphere()
 {
 	radius = DEFAULT_RADIUS;
 }
+Sphere::Sphere(GLfloat radius)
+{
+	this->radius = radius;
+}
 void Sphere::setRadius(GLfloat radius)
 {
 	this->radius = radius;
@@ -22,9 +26,9 @@ this->color = color;
 void Sphere::draw()
 {
 	glPushMatrix();
-	GLfloat refSphere[3] = { 1.0f,0.0f,0.0f };		//桌面反射参数
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, refSphere);//设置桌面漫反射
-	glMaterialfv(GL_FRONT, GL_SPECULAR, refSphere);//设置桌面镜面反射
+	GLfloat refSphere[3] = { 1.0f,0.0f,0.0f };
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, refSphere);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, refSphere);
 
 	glTranslatef(bottomCenter.x, bottomCenter.y, bottomCenter.z + radius);
 	//glColor3f(color.x, color.y, color.z);	// white

@@ -35,7 +35,8 @@ bool Vector::operator!= (Vector op)
 }
 Vector Vector::abs()
 {
-	return Vector(x >= 0 ? x : -x,
+	return Vector(
+		x >= 0 ? x : -x,
 		y >= 0 ? y : -y,
 		z >= 0 ? z : -z);
 }
@@ -54,6 +55,10 @@ Vector& Vector::rotate_z(GLfloat angle)
 GLfloat Vector::getLength()
 {
 	return sqrt(x * x + y * y + z * z);
+}
+GLfloat Vector::getSquareLength()
+{
+	return x * x + y * y + z * z;
 }
 Vector Vector::getIdentityVector()
 {

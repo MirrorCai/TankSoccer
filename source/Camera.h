@@ -4,7 +4,7 @@
 #include "Basic.h"
 #include "Pitch.h"
 
-enum CameraMode { FIXED, FREE, PLAYER };
+enum CameraMode { FASTENED, FREE, PLAYER };
 
 class Camera
 {
@@ -36,6 +36,7 @@ protected:
 	GLfloat firstPersonPersDist;
 	const GLfloat firstPersonPersHeight = 30.0f;
 
+	static const Vector INITIAL_VECTOR;
 };
 
 #endif // !CAMERA_H

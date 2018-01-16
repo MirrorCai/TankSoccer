@@ -1,21 +1,22 @@
 #include "Entity.h"
+#include "TextureManager.h"
 
 const Vector Entity::MOTIONLESS(0, 0, 0);
 const Point Entity::CENTER(0, 0, 0);
-const GLfloat Entity::highestSpeed = 0.04;
+const GLfloat Entity::highestSpeed = 1.0f;
 
 Entity::Entity(unsigned int mass, Point center)
 	:center(center), velocity(MOTIONLESS), acceleration(MOTIONLESS), 
 	mass(mass), decelerationFactor(0.0)
 {
-	;
+	textureID = UNDEFINED_TEXTURE;
 }
 
 Entity::Entity(unsigned int mass)
 	:center(CENTER), velocity(MOTIONLESS), acceleration(MOTIONLESS),
 	mass(mass), decelerationFactor(0.0)
 {
-	;
+	textureID = UNDEFINED_TEXTURE;
 }
 
 Entity::~Entity()
@@ -72,11 +73,15 @@ void Entity::setDecelerationFactor(GLfloat decelerationFactor)
 {
 	this->decelerationFactor = decelerationFactor;
 }
+void Entity::setTextureID(GLuint texture_id)
+{
+	this->textureID = texture_id;
+}
 bool Entity::move()
 {
 	if (velocity == Vector(0, 0, 0))
 		return false;
-	
+
 	center += velocity;
 	if (velocity.getLength() <= scalarAcceleration)
 		setVelocity(Vector(0, 0, 0));	// stop
@@ -113,8 +118,21 @@ void Entity::followCenter()
 }
 void Entity::render()
 {
+	if (textureID != UNDEFINED_TEXTURE)
+	{
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, TextureManager::getTextureID(textureID));
+		// Set texture: will not be affected by environment light
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	}
+
 	for (unsigned int i = 0; i < objects.size(); i++)
 		objects[i]->draw();
+
+	if (textureID != UNDEFINED_TEXTURE)
+	{
+		glDisable(GL_TEXTURE_2D);
+	}
 }
 // should be called whenver the speed changes
 void Entity::updateAcceleration()
