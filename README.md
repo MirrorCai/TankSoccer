@@ -17,3 +17,18 @@ Lastly, "main.cpp" here contains the main function, and controls OpenGL.
 
 Dec. 20th
 Yiqun Liu
+
+final code in demo.zip
+"surrounding" class is the environvent picture
+"TextureManager" class is texture control center
+
+Function：
+wasd: tanker1
+tfgh: tanker2
+ijkl: vision
+9:  change light position
+0:  open or close light
+c:  capture 
+
+Jan.16th
+Qingpeng Cai

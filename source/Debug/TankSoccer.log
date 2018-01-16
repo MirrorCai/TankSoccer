@@ -1,7 +1,22 @@
-﻿  Game.cpp
-d:\code\project\tank\tanksoccer\source\game.cpp(345): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+﻿  Tank.cpp
+  Sphere.cpp
+  main.cpp
+d:\code\project\tanker\tanksoccer\source\main.cpp(78): warning C4838: 从“double”转换到“GLfloat”需要收缩转换
+d:\code\project\tanker\tanksoccer\source\main.cpp(79): warning C4838: 从“double”转换到“GLfloat”需要收缩转换
+d:\code\project\tanker\tanksoccer\source\main.cpp(80): warning C4838: 从“double”转换到“GLfloat”需要收缩转换
+  Geometry.cpp
+  Game.cpp
+d:\code\project\tanker\tanksoccer\source\game.cpp(345): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.15063.0\ucrt\stdio.h(207): note: 参见“fopen”的声明
-d:\code\project\tank\tanksoccer\source\game.cpp(349): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\code\project\tanker\tanksoccer\source\game.cpp(349): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.15063.0\ucrt\stdio.h(207): note: 参见“fopen”的声明
-  TankSoccer.vcxproj -> D:\code\project\Tank\TankSoccer\source\Debug\TankSoccer.exe
-  TankSoccer.vcxproj -> D:\code\project\Tank\TankSoccer\source\Debug\TankSoccer.pdb (Partial PDB)
+  Entity.cpp
+  Cylinder.cpp
+  Cuboid.cpp
+  Camera.cpp
+  Basic.cpp
+  Ball.cpp
+  正在生成代码...
+  LINK : 没有找到 D:\code\project\Tanker\TankSoccer\source\Debug\TankSoccer.exe 或上一个增量链接没有生成它；正在执行完全链接
+  TankSoccer.vcxproj -> D:\code\project\Tanker\TankSoccer\source\Debug\TankSoccer.exe
+  TankSoccer.vcxproj -> D:\code\project\Tanker\TankSoccer\source\Debug\TankSoccer.pdb (Partial PDB)
