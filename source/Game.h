@@ -46,6 +46,8 @@ private:
 
 	const int pausePeriod = 1500;	// 1.5s
 
+	void resetAllObjects();
+
 	void printInfo();
 
 	const GLfloat safeMargin = 15;

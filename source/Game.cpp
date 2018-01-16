@@ -38,8 +38,8 @@ void Game::keyboard(unsigned char key, int x, int y)
 	case 'b': {capture(); break; }
 	case '9': {bChange = !bChange; break; }
 
-	case 't': {tank2.setSpeed(0.02); break; }
-	case 'g': {tank2.setSpeed(-0.01); break; }
+	case 't': {tank2.setSpeed(0.08); break; }
+	case 'g': {tank2.setSpeed(-0.03); break; }
 	case 'f': {tank2.turn(2.5); break; }
 	case 'h': {tank2.turn(-2.5); break; }
 	case 'r': {tank2.turnTurret(2.5); break; }
@@ -103,8 +103,7 @@ void Game::gotoNextFrame()
 	}
 }
 
-/* Check whether the ball collides with the bound and keep its center inside 
-* the pitch, then bouncing back with no velocity lost */
+/* Check whether the ball collides with the bound. */
 void Game::checkBounds(Ball& ball)
 {
 	static const GLfloat halfLength = 67.5f;
@@ -114,16 +113,10 @@ void Game::checkBounds(Ball& ball)
 
 	if (c.x >= halfLength || c.x <= -halfLength || c.y >= halfWidth || c.y <= -halfWidth)
 	{
-		srand((unsigned)time(NULL));
-		
-		GLfloat x = rand() % 80 - 40, y = rand() % 40 - 20;
-		GLfloat t1x = tank1.getCenter().x;
-		GLfloat t2x = tank1.getCenter().x;
-		while (t1x - 6 < x && x < t1x + 6 || t2x - 6 < x && x < t2x + 6)
-			x = rand() % 80 - 40;
 
 		if (-Goal::goalWidth <= c.y && c.y <= Goal::goalWidth)
 		{
+			resetAllObjects();
 			goalPause = true;
 			if (c.x > 0)
 				score_p1++;
@@ -131,10 +124,24 @@ void Game::checkBounds(Ball& ball)
 				score_p2++;
 		}
 		else
+		{
 			outsidePause = true;
+			// Set ball a random position that does not collide with tanks.
+			srand((unsigned)time(NULL));
+
+			GLfloat x = rand() % 80 - 40, y = rand() % 40 - 20;
+			GLfloat t1x = tank1.getCenter().x;
+			GLfloat t2x = tank1.getCenter().x;
+
+			while (t1x - 6 < x && x < t1x + 6 || t2x - 6 < x && x < t2x + 6)
+				x = rand() % 80 - 40;
+
+			ball.setCenter(Point(x, y, 0));
+			ball.setVelocity(Vector(0, 0, 0));
+		}
+			
 		
-		ball.setCenter(Point(x, y, 0));
-		ball.setVelocity(Vector(0, 0, 0));
+		
 	}
 }
 
@@ -233,6 +240,18 @@ void Game::tanksCollide(Tank& tank1, Tank& tank2)
 	vn_tank2 = temp;
 	tank1.setVelocity(vn_tank1 + vt_tank1);
 	tank2.setVelocity(vn_tank2 + vt_tank2);
+}
+
+void Game::resetAllObjects()
+{
+	tank1.setCenter(Point(-40, 0, 0));
+	tank2.setCenter(Point(40, 0, 0));
+	ball.setCenter(Point(0, 0, 0));
+	tank1.setSpeed(0);
+	tank1.setAngle(0);
+	tank2.setSpeed(0);
+	tank2.setAngle(180);
+	ball.setSpeed(0);
 }
 
 void Game::printInfo()
