@@ -1,36 +1,45 @@
 #include "Game.h"
 #include <time.h>
+
 Game::Game()
-	:tank(Point(-40, 0, 0)),tank2(Point(40, 0, 0))
+	:tank1(Point(-40, 0, 0)),tank2(Point(40, 0, 0))
 {
+	score_p1 = 0;
+	score_p2 = 0;
 	tFlag = 1;
 	tCount = 0;
 	bEnvir = true;
 	bSpot = false;
 	bChange = false;
 	followItem = BALL;
-	tank.turn(0);
+	tank1.turn(0);
+	tank1.setTextureID(TextureManager::CAMOUFLAGE_TEXT_1);
 	tank2.turn(180);
+	tank2.setTextureID(TextureManager::CAMOUFLAGE_TEXT_2);
+	outsidePause = false;
+	userPause = false;
 }
 void Game::keyboard(unsigned char key, int x, int y)
 {
+	if (outsidePause || userPause)
+		return;
 	switch (key)
 	{
 	case 27: {exit(0); break; }	// ESC
 	//case ' ': {ball.setVelocity(Vector(0.1, 0, 0)); break; }
-	case 'w': {tank.setSpeed(0.02); break; }
-	case 's': {tank.setSpeed(-0.01); break; }
-	case 'a': {tank.turn(2.5); break; }
-	case 'd': {tank.turn(-2.5); break; }
-	case 'q': {tank.turnTurret(2.5); break; }
-	case 'e': {tank.turnTurret(-2.5); break; }
+	case 'w': {tank1.setSpeed(0.08); break; }
+	case 's': {tank1.setSpeed(-0.03); break; }
+	case 'a': {tank1.turn(2.5); break; }
+	case 'd': {tank1.turn(-2.5); break; }
+	case 'q': {tank1.turnTurret(2.5); break; }
+	case 'e': {tank1.turnTurret(-2.5); break; }
 
 	case '0': {bEnvir = !bEnvir; break; }
 	case 'b': {capture(); break; }
 	case '9': {bChange = !bChange; break; }
 
-	case 't': {tank2.setSpeed(0.02); break; }
-	case 'g': {tank2.setSpeed(-0.01); break; }
+	case 't': {tank2.setSpeed(0.08); break; }
+	case 'g': {tank2.setSpeed(-0.03); break; }
 	case 'f': {tank2.turn(2.5); break; }
 	case 'h': {tank2.turn(-2.5); break; }
 	case 'r': {tank2.turnTurret(2.5); break; }
@@ -54,51 +63,255 @@ void Game::updateCamera()
 	if (followItem == BALL)
 		camera.follow(ball.getCenter());
 	else
-		camera.follow(tank.getCenter(), tank.getAngle());
+		camera.follow(tank1.getCenter(), tank1.getAngle());
 }
 void Game::display()
 {
+	Surrounding::drawAt(camera.getEye());
 	pitch.draw();
 	ball.render();
-	tank.render();
+	tank1.render();
 	tank2.render();
+	printInfo();
 }
 void Game::gotoNextFrame()
 {
-	orthoCollide(tank.getCenter(),ball.getCenter(),1);
-	orthoCollide(tank2.getCenter(), ball.getCenter(),2);
+	static int pauseStart = 0;
+	int time = glutGet(GLUT_ELAPSED_TIME);
+	tanksCollide(tank1, tank2);
+	tankBallCollide(tank1, ball);
+	tankBallCollide(tank2, ball);
+	
+	checkBounds(ball);
+	checkBounds(tank1);
+	checkBounds(tank2);
+	if (ball.getVelocity().getSquareLength() > 0.04)
+		ball.setSpeed(0.2);
 	ball.update();
-	tank.update();
+	tank1.update();
 	tank2.update();
-}
-//unfinished: tank vs tank 
-void Game::TankCollision(Point c1, Point c2) {
-	Size blockSize = tank.getBlockSize();
-	Vector force_ball_to_tank = collision2D(c1.x, c1.y, blockSize.x, blockSize.y,
-		tank.getAngle(), c2.x, c2.y, blockSize.x, blockSize.y,
-		tank2.getAngle());
-	if (force_ball_to_tank != Vector(0, 0, 0))	// Collided
-	{
 
+	if (outsidePause || goalPause)
+	{
+		if (pauseStart == 0)
+			pauseStart = time;
+		else if (time - pauseStart > pausePeriod)
+		{
+			goalPause = outsidePause = false;
+			pauseStart = 0;
+		}
 	}
 }
-void Game::orthoCollide(Point c1, Point c2, int TankNum)
+
+/* Check whether the ball collides with the bound. */
+void Game::checkBounds(Ball& ball)
+{
+	static const GLfloat halfLength = 67.5f;
+	static const GLfloat halfWidth = 37.5f;
+	Vector velocity = ball.getVelocity();
+	Point c = ball.getCenter() + velocity;
+
+	if (c.x >= halfLength || c.x <= -halfLength || c.y >= halfWidth || c.y <= -halfWidth)
+	{
+
+		if (-Goal::goalWidth <= c.y && c.y <= Goal::goalWidth)
+		{
+			resetAllObjects();
+			goalPause = true;
+			if (c.x > 0)
+				score_p1++;
+			else
+				score_p2++;
+		}
+		else
+		{
+			outsidePause = true;
+			// Set ball a random position that does not collide with tanks.
+			srand((unsigned)time(NULL));
+
+			GLfloat x = rand() % 80 - 40, y = rand() % 40 - 20;
+			GLfloat t1x = tank1.getCenter().x;
+			GLfloat t2x = tank1.getCenter().x;
+
+			while (t1x - 6 < x && x < t1x + 6 || t2x - 6 < x && x < t2x + 6)
+				x = rand() % 80 - 40;
+
+			ball.setCenter(Point(x, y, 0));
+			ball.setVelocity(Vector(0, 0, 0));
+		}
+			
+		
+		
+	}
+}
+
+/* Check whether the tank collides with the bound and keep all its four 
+* vertices inside the pitch, then set the Vn to be zero.
+*/
+void Game::checkBounds(Tank& tank)
+{
+	// use hard code to accerlerate
+	static const GLfloat halfLength = 67.5f;
+	static const GLfloat halfWidth = 37.5f;
+	Vector v1 = 0.5 * tank.getBlockSize();
+	Vector v2 = Vector(v1.x, -v1.y, 0);
+	// after rotate
+	v1.rotate_z(tank.getAngle());
+	v2.rotate_z(tank.getAngle());
+
+	// get updated vertex coodinate
+	Point c = tank.getCenter() + tank.getVelocity();
+	
+	// expected coordinate of the tank after collision
+	Point p1 = c + v1, p2 = c + v2, p3 = c - v1, p4 = c - v2;
+
+	Vector adjust = Vector(0, 0, 0);
+	Vector velocity = tank.getVelocity();
+	GLfloat exceed;
+
+	// adjustment in x
+	if ((exceed = halfLength - max_of_4(p1.x, p2.x, p3.x, p4.x)) < 0)
+	{
+		adjust.x = exceed;
+		if (velocity.x > 0) velocity.x = 0;
+	}
+	else if ((exceed = -halfLength - min_of_4(p1.x, p2.x, p3.x, p4.x)) > 0)
+	{
+		adjust.x = exceed;
+		if (velocity.x < 0) velocity.x = 0;
+	}
+
+	// adjustment in y
+	if ((exceed = halfWidth - max_of_4(p1.y, p2.y, p3.y, p4.y)) < 0)
+	{
+		adjust.y = exceed;
+		if (velocity.y > 0) velocity.y = 0;
+	}
+	else if ((exceed = -halfWidth - min_of_4(p1.y, p2.y, p3.y, p4.y)) > 0)
+	{
+		adjust.y = exceed;
+		if (velocity.y < 0) velocity.y = 0;
+	}
+
+	tank.setVelocity(velocity);
+}
+
+GLfloat Game::max_of_4(GLfloat op1, GLfloat op2, GLfloat op3, GLfloat op4)
+{
+	op1 = op1 > op2 ? op1 : op2;
+	op3 = op3 > op4 ? op3 : op4;
+	return op1 > op3 ? op1 : op3;
+}
+
+GLfloat Game::min_of_4(GLfloat op1, GLfloat op2, GLfloat op3, GLfloat op4)
+{
+	op1 = op1 < op2 ? op1 : op2;
+	op3 = op3 < op4 ? op3 : op4;
+	return op1 < op3 ? op1 : op3;
+}
+
+void Game::tanksCollide(Tank& tank1, Tank& tank2)
+{
+	Point c1 = tank1.getCenter() + tank1.getVelocity();
+	Point c2 = tank2.getCenter() + tank2.getVelocity();
+	Size blockSize = tank1.getBlockSize();
+
+	Vector ret = collision2D(c1.x, c1.y, blockSize.x, blockSize.y, tank1.getAngle(),
+		c2.x, c2.y, blockSize.x, blockSize.y, tank2.getAngle());
+	if (ret == Vector(0, 0, 0))
+		return;
+	cout << ret << endl;
+	
+	Vector force_to_tank1 = ret.getIdentityVector();
+	Vector force_to_tank2 = -force_to_tank1;
+
+	// step1: keep 2 tanks separated
+	GLfloat rejectFactor = 0.5;
+	tank1.setCenter(tank1.getCenter() + rejectFactor * force_to_tank1);
+	tank2.setCenter(tank2.getCenter() + rejectFactor * force_to_tank2);
+
+	// step2: update speed
+	Vector vn_tank1 = (tank1.getVelocity() * force_to_tank1) * force_to_tank1;
+	Vector vt_tank1 = tank1.getVelocity() - vn_tank1;
+	Vector vn_tank2 = (tank2.getVelocity() * force_to_tank2) * force_to_tank2;
+	Vector vt_tank2 = tank2.getVelocity() - vn_tank2;
+	Vector temp = vn_tank1;
+	vn_tank1 = vn_tank2;
+	vn_tank2 = temp;
+	tank1.setVelocity(vn_tank1 + vt_tank1);
+	tank2.setVelocity(vn_tank2 + vt_tank2);
+}
+
+void Game::resetAllObjects()
+{
+	tank1.setCenter(Point(-40, 0, 0));
+	tank2.setCenter(Point(40, 0, 0));
+	ball.setCenter(Point(0, 0, 0));
+	tank1.setSpeed(0);
+	tank1.setAngle(0);
+	tank2.setSpeed(0);
+	tank2.setAngle(180);
+	ball.setSpeed(0);
+}
+
+void Game::printInfo()
+{
+	static char scoreBuffer[32];
+	static const char *outMessage = "The ball has go outside!";
+	static const char *goalMessage = "GOAAAAAAAL!!!";
+	sprintf(scoreBuffer, "P1 vs. P2: [%u : %u]", score_p1, score_p2);
+
+	// prepare
+	glDisable(GL_DEPTH_TEST);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, 600, 0, 350, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// print information
+	
+	// Score information
+	glRasterPos2f(10, 10);
+	for (const char *c = scoreBuffer; *c != '\0'; c++)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+	
+	// Pause information
+	if (goalPause)
+	{
+		glRasterPos2f(200, 150);
+		for (const char *c = goalMessage; *c != '\0'; c++)
+			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
+	}
+	else if (outsidePause)
+	{
+		glRasterPos2f(200, 150);
+		for (const char *c = outMessage; *c != '\0'; c++)
+			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
+	}
+
+	// recover
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glEnable(GL_DEPTH_TEST);
+}
+
+void Game::tankBallCollide(Tank& tank, Ball& ball)
 {
 	// Now only consider one tank and one ball
-	//Point c1 = tank.getCenter(), c2 = ball.getCenter();
-	Tank* tanker;
-	if (TankNum == 1)
-		tanker = &tank;
-	else
-		tanker = &tank2;
-	Size blockSize = tanker->getBlockSize();
+	Point c1 = tank.getCenter(), c2 = ball.getCenter();
+	Size blockSize = tank.getBlockSize();
 	Vector force_ball_to_tank = collision2D(c1.x, c1.y, blockSize.x, blockSize.y,
-		tanker->getAngle(), c2.x, c2.y, ball.getRadius());
+		tank.getAngle(), c2.x, c2.y, ball.getRadius());
 	if (force_ball_to_tank != Vector(0, 0, 0))	// Collided
 	{
 		// Assume the speed of tank will not be changed after a collision
 		// formula: v_n_ball' = 2 * v_n_tank - v_n_ball
-		
+
 		// Resolve return value
 		GLfloat depth = force_ball_to_tank.z;
 		force_ball_to_tank.z = 0;
@@ -110,13 +323,13 @@ void Game::orthoCollide(Point c1, Point c2, int TankNum)
 		Vector v_ball = ball.getVelocity();
 		Vector v_n_ball = (v_ball * f_tank_i) * f_tank_i;	// dotted product first and
 		Vector v_t_ball = v_ball - v_n_ball;				// scalar product second
-		
-		Vector v_tank = tanker->getVelocity();
+
+		Vector v_tank = tank.getVelocity();
 		Vector v_n_tank = (v_tank * f_ball_i) * f_ball_i;
 
 		// First: keep objects separated
 		// TODO: if ball will not go outside; else tank roll back
-		ball.setCenter(ball.getCenter() + depth * f_ball_i + 
+		ball.setCenter(ball.getCenter() + depth * f_ball_i +
 			v_n_tank - v_n_ball);	// add relative speed
 
 		v_n_ball = 2 * v_n_tank - v_n_ball;
@@ -124,6 +337,7 @@ void Game::orthoCollide(Point c1, Point c2, int TankNum)
 		ball.setVelocity(v_ball);
 	}
 }
+
 /** Family of collision detection functions. For simplicity here we use a
 *	centroid model, thus only the direction of elastic force matters. All
 *	functions of this family will return the direction vector of elastic force
@@ -138,33 +352,61 @@ void Game::orthoCollide(Point c1, Point c2, int TankNum)
 *	one of their vertices must be in the other rectangles. In other word, if a
 *	vertex is included by the opposite angles of the other rectangles, then two
 *	rectangle intersects. This could be check quickly using the property of 
-*	dotted product and the right angle. (< 90 ~ > 0; == 90 ~ == 0; > 90 ~ < 0)
+*	dotted product and the rightGoal angle. (< 90 ~ > 0; == 90 ~ == 0; > 90 ~ < 0)
 */
 Vector Game::collision2D(
 	GLfloat x1, GLfloat y1, GLfloat l1, GLfloat w1, GLfloat a1,
 	GLfloat x2, GLfloat y2, GLfloat l2, GLfloat w2, GLfloat a2)
 {
-	GLfloat** vertices1 = getVertices(x1, y1, l1, w1, a1);
-	GLfloat** vertices2 = getVertices(x2, y2, l2, w2, a2);
-	int v1_x = vertices1[1][0] - vertices1[0][0], v1_y = vertices1[1][1] - vertices1[0][1];
-	int v2_x = vertices1[3][0] - vertices1[0][0], v2_y = vertices1[3][1] - vertices1[0][1];
-	int v3_x = vertices1[1][0] - vertices1[2][0], v3_y = vertices1[1][1] - vertices1[2][1];
-	int v4_x = vertices1[3][0] - vertices1[2][0], v4_y = vertices1[3][1] - vertices1[2][1];
-	
+	// actually const
+	static int safe = l1 + w1;
+	if (x1 - x2 > safe || x2 - x1 > safe || y1 - y2 > safe || y2 - y1 > safe)
+		return Vector(0, 0, 0);
+
+	//GLfloat*** vertices = new GLfloat**[2];
+	static GLfloat vertices[2][4][2];
+	setTankVertices(x1, y1, l1, w1, a1, vertices[0]);
+	setTankVertices(x2, y2, l2, w2, a2, vertices[1]);
+
+	/*for (int i = 0; i < 4; i++)
+		cout << vertices[0][i][0] << "\t" << vertices[0][i][1] << endl;
+	cout << "\n";
 	for (int i = 0; i < 4; i++)
+		cout << vertices[1][i][0] << "\t" << vertices[1][i][1] << endl;
+	cout << "\n";*/
+	//vertices[0] = getVertices(x1, y1, l1, w1, a1);
+	//vertices[1] = getVertices(x2, y2, l2, w2, a2);
+	//cout << "survive!\n";
+	
+	// two rectangle
+	for (int rec = 0; rec < 2; rec++)
 	{
-		int v_x = vertices1[i][0] - vertices1[i][0];
-		int v_y = vertices1[i][1] - vertices1[i][1];
-		if (v_x * v1_x + v_y * v1_y >= 0 && v_x * v2_x + v_y * v2_y >= 0 &&	// angle[0] includes!
-			v_x * v3_x + v_y * v3_y >= 0 && v_x * v4_x + v_y * v4_y >= 0)	// angle[2] includes!
+		int other = 1 - rec;
+		// 4 edges displayed in 2-D vector
+		int v1_x = vertices[rec][1][0] - vertices[rec][0][0], v1_y = vertices[rec][1][1] - vertices[rec][0][1];
+		int v2_x = vertices[rec][3][0] - vertices[rec][0][0], v2_y = vertices[rec][3][1] - vertices[rec][0][1];
+		int v3_x = vertices[rec][1][0] - vertices[rec][2][0], v3_y = vertices[rec][1][1] - vertices[rec][2][1];
+		int v4_x = vertices[rec][3][0] - vertices[rec][2][0], v4_y = vertices[rec][3][1] - vertices[rec][2][1];
+
+		for (int i = 0; i < 4; i++)
 		{
-			releaseVertices(vertices1);
-			releaseVertices(vertices2);
-			return Vector(v1_x - v2_x, v1_y - v2_y, 0);	// a simplified centeroid model
+			int _v1_x = vertices[other][i][0] - vertices[rec][0][0], _v1_y = vertices[other][i][1] - vertices[rec][0][1];
+			int _v2_x = vertices[other][i][0] - vertices[rec][2][0], _v2_y = vertices[other][i][1] - vertices[rec][2][1];
+			
+			if (_v1_x * v1_x + _v1_y * v1_y >= 0 && _v1_x * v2_x + _v1_y * v2_y >= 0 &&	// angle[0] includes!
+				_v2_x * v3_x + _v2_y * v3_y >= 0 && _v2_x * v4_x + _v2_y * v4_y >= 0)	// angle[2] includes!
+			{
+				cout << other << '\t' << i;
+				//releaseVertices(vertices[1]);
+				//releaseVertices(vertices[2]);
+				
+				// Centeroid model. indicate the direction of rec1's movement
+				return Vector(x1 - x2, y1 - y2, 0);	
+			}
 		}
 	}
-	releaseVertices(vertices1);
-	releaseVertices(vertices2);
+	//releaseVertices(vertices[1]);
+	//releaseVertices(vertices[2]);
 	return Vector(0, 0, 0);
 }
 
@@ -236,7 +478,7 @@ Vector Game::collision2D(GLfloat x1, GLfloat y1, GLfloat length, GLfloat width,
 		}
 		else if (last_u.x != 0)
 		{
-			// push to the right border
+			// push to the rightGoal border
 			ret.y = 0;
 			ret.z = radius + 0.5 * length - x2;
 		}
@@ -286,7 +528,33 @@ Vector Game::collision2D(GLfloat x1, GLfloat y1, GLfloat r1,
 	return Vector(x1 - x2, y1 - y2, 0);
 }
 
-// get coordinates of a rectangle in rectagle-coordinates
+void Game::setTankVertices(GLfloat x, GLfloat y, GLfloat length,
+	GLfloat width, GLfloat angle, GLfloat vertices[4][2])
+{
+	angle = angle / 180 * 3.1415926;	// degree --> rad
+	GLfloat cos_angle = cos(angle);
+	GLfloat sin_angle = sin(angle);
+
+	// naming: h - half, l - length, w - width
+	// half length vector
+	GLfloat hlx = 0.5 * cos_angle * length;
+	GLfloat hly = 0.5 * sin_angle * length;
+	// half width vector
+	GLfloat hwx = 0.5 * (-sin_angle) * width;
+	GLfloat hwy = 0.5 * cos_angle * width;
+
+	// calculate coordinates from the center
+	vertices[0][0] = x + hlx + hwx;
+	vertices[0][1] = y + hly + hwy;
+	vertices[1][0] = x + hlx - hwx;
+	vertices[1][1] = y + hly - hwy;
+	vertices[2][0] = x - hlx - hwx;
+	vertices[2][1] = y - hly - hwy;
+	vertices[3][0] = x - hlx + hwx;
+	vertices[3][1] = y - hly + hwy;
+}
+// get coordinates of a rectangle in rectangle-coordinates
+// parameter: center coordinates, size, angle
 GLfloat** Game::getVertices(GLfloat x, GLfloat y, GLfloat length,
 	GLfloat width, GLfloat angle)
 {
@@ -297,13 +565,17 @@ GLfloat** Game::getVertices(GLfloat x, GLfloat y, GLfloat length,
 	angle = angle / 180 * 3.1415926;	// degree --> rad
 	GLfloat cos_angle = cos(angle);
 	GLfloat sin_angle = sin(angle);
-	// rotate half length & half width
+	
+	// naming: h - half, l - length, w - width
+	
+	// half length vector
 	GLfloat hlx = 0.5 * cos_angle * length;
 	GLfloat hly = 0.5 * sin_angle * length;
+	// half width vector
 	GLfloat hwx = 0.5 * (-sin_angle) * width;
 	GLfloat hwy = 0.5 * cos_angle * width;
-	GLfloat hl = 0.5 * length, hw = 0.5 * width;
 	
+	// calculate coordinates from the center
 	ret[0][0] = x + hlx + hwx;
 	ret[0][1] = y + hly + hwy;
 	ret[1][0] = x + hlx - hwx;
@@ -315,16 +587,18 @@ GLfloat** Game::getVertices(GLfloat x, GLfloat y, GLfloat length,
 	return ret;
 }
 
+// TODO: get rid of this dynamic allocation
+// Should be paired with every use of getVertices to avoid memory leak
 void Game::releaseVertices(GLfloat** vertices)
 {
 	for (int i = 0; i < 4; i++)
-		delete[]vertices[i];
-	delete[]vertices;
+		delete[] vertices[i];
+	delete[] vertices;
 }
 
 void Game::capture()
 {
-	FILE*    pDummyFile;  //指向另一bmp文件，用于复制它的文件头和信息头数据  
+	FILE*    pDummyFile;	//指向另一bmp文件，用于复制它的文件头和信息头数据  
 	FILE*    pWritingFile;  //指向要保存截图的bmp文件  
 	GLubyte* pPixelData;    //指向新的空的内存，用于保存截图bmp文件数据  
 	GLubyte  BMP_Header[BMP_Length];

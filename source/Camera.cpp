@@ -1,11 +1,13 @@
 #include "Camera.h"
 
+const Vector Camera::INITIAL_VECTOR(0, -70.0f, 40.0f);
+
 Camera::Camera()
-	:focus(0, 0, 0), fixedEye(0, -GLfloat(Pitch::WIDTH) / 2 - 10, 40), 
-	freeEye(fixedEye), firstPersonPersDist(30.0f),
+	:focus(0, 0, 0), fixedEye(INITIAL_VECTOR),
+	freeEye(INITIAL_VECTOR), firstPersonPersDist(30.0f),
 	playerEye(-firstPersonPersDist, 0, firstPersonPersHeight)
 {
-	mode = FIXED;
+	mode = FASTENED;
 }
 void Camera::addEye(int xyz) {
 	switch (xyz)
@@ -49,7 +51,7 @@ Point Camera::getEye()
 {
 	switch (mode)
 	{
-	case FIXED:
+	case FASTENED:
 		return fixedEye;
 	case FREE:
 		return freeEye;
@@ -79,7 +81,13 @@ void Camera::zoom(GLfloat length)
 	if (mode == PLAYER)
 		firstPersonPersDist -= length;
 	else
-		freeEye -= (freeEye - focus).getIdentityVector() * length;
+	{
+		GLfloat distance = (freeEye - focus).getLength();
+		if (distance < 12 && length > 0 || distance > 80 && length < 0)
+			return;
+		else
+			freeEye -= (freeEye - focus).getIdentityVector() * length;
+	}
 }
 
 void Camera::rotateFreeEye(GLfloat angle)
@@ -107,7 +115,7 @@ void Camera::changeMode()
 {
 	switch (mode)
 	{
-	case FIXED:
+	case FASTENED:
 		mode = FREE;
 		break;
 	case FREE:
@@ -115,17 +123,17 @@ void Camera::changeMode()
 		freeEye = fixedEye;	// This is a little bit controversial
 		break;
 	case PLAYER:
-		mode = FIXED;
+		mode = FASTENED;
 		break;
 	default:
-		mode = FIXED;
+		mode = FASTENED;
 		break;
 	}
 }
 
 void Camera::follow(Point objectPos)
 {
-	static const Vector fixedEyeDistance(0, -GLfloat(Pitch::WIDTH) / 2 - 10, 40);
+	static const Vector fixedEyeDistance(INITIAL_VECTOR);
 	static const GLfloat
 		bound_x = 0.45 * Pitch::LENGTH, bound_y = 0.25 * Pitch::WIDTH;
 	
@@ -137,7 +145,7 @@ void Camera::follow(Point objectPos)
 	if (focus.y > bound_y) focus.y = bound_y;
 	if (focus.y < -bound_y) focus.y = -bound_y;
 
-	if (mode == FIXED)
+	if (mode == FASTENED)
 		fixedEye = fixedEyeDistance + focus;
 	if (mode == FREE)
 		freeEye = freeEyeDistance + focus;

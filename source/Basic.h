@@ -5,7 +5,6 @@
 #include <vector>
 #include <cstdlib>
 #include <cmath>
-//#include "glut/glut.h"
 #include <gl\glut.h>
 
 using namespace std;
@@ -26,6 +25,7 @@ public:
 	Vector abs();
 	Vector& rotate_z(GLfloat angle);
 
+	GLfloat getSquareLength();	// avoid sqrt
 	GLfloat getLength();
 	Vector getIdentityVector();
 	GLfloat x, y, z;

@@ -1,15 +1,16 @@
 #include "Tank.h"
+#include "Game.h"
 
 const unsigned int Tank::TANK_MASS = 8000;	// for 800kg
-const GLfloat Tank::TANK_DEFAULT_FACTOR = 0.0001f;
+const GLfloat Tank::TANK_DEFAULT_FACTOR = 0.1f;
 const GLfloat Tank::FIELD_ANGLE = 80.0f;
 
 Tank::Tank(Point center)
 	:Entity(TANK_MASS, center)
 {
-	setDecelerationFactor(TANK_DEFAULT_FACTOR);
+	setDecelerationFactor(TANK_DEFAULT_FACTOR / 10);
 
-	// base block of the tank
+	// base block of the tank1
 	objects.push_back(new Cuboid(Size(9, 5, 3)));
 	displacements.push_back(Vector(0, 0, 0));
 	
@@ -19,7 +20,7 @@ Tank::Tank(Point center)
 	displacements.push_back(Vector(0, 0, 3));
 	
 	// gun
-	objects.push_back(new Cylinder(0.5, 6, Cylinder::HORIZONTAL));
+	objects.push_back(new Cylinder(0.5, 6, 0, false));
 	// bottom.z = block height + turret height
 	displacements.push_back(Vector(0, 0, 5));
 
